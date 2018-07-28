@@ -1,0 +1,58 @@
+package server;
+
+import java.io.*;
+import java.net.*;
+
+
+public class MySrv implements Server{
+	
+	///DONT PRINT ANYTHING IN THAT CLASS!!!!!!!!!!!!
+	private final int port;
+	private ClientHandler ch;
+	private volatile boolean stop;
+	
+	public MySrv(int port) {
+		this.port=port;
+		stop=false;
+	}
+	
+	private void runServer() throws IOException{
+		ServerSocket server=new ServerSocket(port);
+		server.setSoTimeout(1000);
+		while(!stop){
+			try{ 
+				Socket aClient=server.accept(); // blocking call
+				InputStream inFromClient=aClient.getInputStream();
+				OutputStream outToClient=aClient.getOutputStream();
+				// interact (read & write) with the client according to protocol
+				ch.handleClient(inFromClient, outToClient);
+				inFromClient.close();
+				outToClient.close();
+				aClient.close();
+			}
+			catch (Exception e) {
+			}
+		}
+		server.close(); 
+		
+	}
+	
+
+	@Override
+	public void start(ClientHandler clientHandler) {
+		this.ch=clientHandler;
+		new Thread(()->{
+			try {
+				runServer();
+			} catch (Exception e) {
+				
+			}
+		}).start(); 
+	}
+
+	@Override
+	public void stop() {
+		stop=true;
+	}
+
+}
